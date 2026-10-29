@@ -1,4 +1,5 @@
 import "server-only";
+import { siteBaseUrl } from "@/lib/utils";
 
 /**
  * Central place for reading server configuration and feature flags.
@@ -14,7 +15,8 @@ export const env = {
     return process.env.NODE_ENV === "production";
   },
   get siteUrl() {
-    return (read("NEXT_PUBLIC_SITE_URL") ?? read("NEXTAUTH_URL") ?? "http://localhost:3000").replace(/\/$/, "");
+    const configured = read("NEXT_PUBLIC_SITE_URL") ?? read("NEXTAUTH_URL");
+    return configured ? configured.replace(/\/$/, "") : siteBaseUrl();
   },
   get authSecret() {
     return read("AUTH_SECRET") ?? read("NEXTAUTH_SECRET");

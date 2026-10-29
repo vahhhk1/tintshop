@@ -106,7 +106,7 @@ All variables are documented in [`.env.example`](.env.example). Only `NEXT_PUBLI
 | `DATABASE_URL` | ✅ | PostgreSQL connection string (Neon/Supabase: pooled URL) |
 | `SHADOW_DATABASE_URL` | – | Only if your host needs a shadow DB for `prisma migrate dev` |
 | `NEXTAUTH_SECRET` | ✅ | Signs session tokens (`openssl rand -base64 32`). `AUTH_SECRET` also works |
-| `NEXTAUTH_URL` | ✅ | Public base URL, e.g. `https://yourdomain.com` |
+| `NEXTAUTH_URL` | – | Public base URL, e.g. `https://yourdomain.com`. Not needed on Vercel (sign-in trusts the request host) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | – | Enables “Continue with Google” (button hidden when unset) |
 | `STRIPE_SECRET_KEY` | prod | Server-side Stripe key |
 | `STRIPE_PUBLISHABLE_KEY` | – | Reserved for client-side Stripe features (Checkout doesn’t need it) |
@@ -119,7 +119,7 @@ All variables are documented in [`.env.example`](.env.example). Only `NEXT_PUBLI
 | `STORAGE_ENDPOINT` / `STORAGE_REGION` / `STORAGE_PUBLIC_URL` | S3 | S3-compatible endpoint (R2/B2/…), region and the public URL of the bucket/CDN |
 | `SMS_PROVIDER`, `TWILIO_*` | – | `twilio` + credentials to send SMS to customers who opted in |
 | `CRON_SECRET` | prod | Protects `/api/cron/reminders` (Vercel Cron sends it automatically) |
-| `NEXT_PUBLIC_SITE_URL` | ✅ | Canonical site URL for links, sitemap and Open Graph |
+| `NEXT_PUBLIC_SITE_URL` | ✅ | Canonical site URL for links, sitemap and Open Graph. On Vercel it defaults to the project’s production domain |
 | `NEXT_PUBLIC_ANALYTICS_ID` | – | Google Analytics 4 measurement ID (`G-…`) |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | dev | Demo admin account created by the seed |
 | `SEED_CUSTOMER_EMAIL` / `SEED_CUSTOMER_PASSWORD` | dev | Demo customer account created by the seed |

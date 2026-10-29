@@ -79,8 +79,14 @@ export function linesToArray(value: string | null | undefined) {
     .filter(Boolean);
 }
 
+/** Canonical base URL: NEXT_PUBLIC_SITE_URL, else the Vercel production domain, else localhost. */
+export function siteBaseUrl() {
+  const vercel = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return (process.env.NEXT_PUBLIC_SITE_URL || (vercel ? `https://${vercel}` : "http://localhost:3000")).replace(/\/$/, "");
+}
+
 export function absoluteUrl(path = "/") {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const base = siteBaseUrl();
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
