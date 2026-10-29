@@ -14,24 +14,62 @@ const SHADES = [
   { vlt: 70, name: "Clear", note: "Nearly invisible. Ideal for windshields and front windows in strict states (ceramic recommended)." },
 ];
 
+const PHOTO = { src: "/images/demo/sedan-hyundai.jpg", width: 1600, height: 1067 };
+
+/** The car's glass in PHOTO (pixel coordinates), so the tint lands on the windows only. */
+const GLASS = [
+  // Windshield
+  "737,220 760,214 1000,211 1150,213 1157,218 1140,270 1118,330 1100,370 1092,377 800,378 560,381 533,380 560,350 610,300 680,250 720,228",
+  // Front door, rear door and rear quarter windows
+  "1205,228 1247,226 1291,360 1155,378 1158,340 1166,300 1180,255 1192,237",
+  "1265,227 1300,234 1335,255 1340,265 1372,346 1302,362",
+  "1352,274 1392,318 1394,338 1381,345",
+];
+/** The side mirror sits in front of the front door glass. */
+const MIRROR = "1188,382 1203,332 1245,330 1284,342 1305,359 1307,375 1284,386 1207,388";
+
 /** Interactive visible-light-transmission (VLT) comparison. */
 export function TintComparison() {
   const [selected, setSelected] = React.useState(2);
   const shade = SHADES[selected]!;
   const darkness = 1 - shade.vlt / 100;
+  const id = React.useId().replace(/[^\w-]/g, "");
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:items-center">
       <div className="relative aspect-[16/10] overflow-hidden rounded-3xl border border-white/10">
-        <Image src="/images/demo/sedan-hyundai.jpg" alt="View through a car window" fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
-        {/* Window "glass" with the selected tint applied */}
-        <div
-          className="absolute inset-[8%_10%_14%_10%] rounded-[38%_42%_10%_10%/55%_55%_8%_8%] border-[6px] border-black/80 shadow-[inset_0_0_60px_rgb(0_0_0/0.6)] transition-[background-color] duration-500"
-          style={{ backgroundColor: `rgb(8 8 10 / ${Math.min(0.95, darkness * 0.92).toFixed(2)})` }}
-          aria-hidden
-        >
-          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-br from-white/15 via-transparent to-transparent" />
-        </div>
+        <Image src={PHOTO.src} alt="Black sedan whose windows preview the selected tint" fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
+        {/* Same framing as object-cover, so the traced glass lines up at any size. */}
+        <svg viewBox={`0 0 ${PHOTO.width} ${PHOTO.height}`} preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
+          <defs>
+            <filter id={`${id}-soft`}>
+              <feGaussianBlur stdDeviation="1.2" />
+            </filter>
+            <mask id={`${id}-glass`}>
+              <g filter={`url(#${id}-soft)`}>
+                {GLASS.map((points) => (
+                  <polygon key={points} points={points} fill="white" />
+                ))}
+                <polygon points={MIRROR} fill="black" />
+              </g>
+            </mask>
+            <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="white" stopOpacity="0.16" />
+              <stop offset="0.45" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g mask={`url(#${id}-glass)`}>
+            <rect
+              width={PHOTO.width}
+              height={PHOTO.height}
+              fill="rgb(8 8 10)"
+              className="transition-opacity duration-500"
+              style={{ opacity: Math.min(0.95, darkness * 0.92) }}
+            />
+            {/* A faint reflection keeps dark film reading as glass. */}
+            <rect width={PHOTO.width} height={PHOTO.height} fill={`url(#${id}-sheen)`} />
+          </g>
+        </svg>
         <div className="absolute bottom-4 left-4 flex items-baseline gap-2 rounded-2xl bg-black/70 px-4 py-2.5">
           <span className="font-display text-3xl font-semibold text-primary tabular-nums">{shade.vlt}%</span>
           <span className="text-sm text-foreground/80">{shade.name}</span>
