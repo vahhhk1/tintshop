@@ -18,8 +18,11 @@ function authorized(request: Request) {
 }
 
 /**
- * Hourly job (vercel.json): releases unpaid holds that have lapsed and sends
- * appointment reminders `reminderHoursBefore` ahead of time.
+ * Daily job (vercel.json, 15:00 UTC = morning in Los Angeles; Vercel Hobby allows one run a
+ * day): releases unpaid holds that have lapsed and sends reminders for appointments within
+ * the next `reminderHoursBefore` hours. With the default 24 h window every appointment gets
+ * its reminder; a shorter window needs an hourly schedule (Vercel Pro). Lapsed holds stop
+ * blocking availability on their own, so the release is only housekeeping.
  */
 export async function GET(request: Request) {
   if (!authorized(request)) return new Response("Unauthorized", { status: 401 });

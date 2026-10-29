@@ -203,7 +203,7 @@ Uploads (service images, gallery, logo, technician photos) go through `/api/uplo
 **Vercel**
 1. Import the repository in Vercel (framework preset: Next.js). The build command is `npm run build` (runs `prisma generate`).
 2. Add the environment variables above for Production (and Preview). Set `NEXTAUTH_URL` and `NEXT_PUBLIC_SITE_URL` to your domain and do **not** set `ALLOW_DEMO_PAYMENTS`.
-3. `vercel.json` schedules `/api/cron/reminders` hourly (sends reminders and releases unpaid holds). Set `CRON_SECRET`; Vercel sends it as a Bearer token.
+3. `vercel.json` schedules `/api/cron/reminders` once a day at 15:00 UTC (sends reminders and releases unpaid holds), the most the Vercel Hobby plan allows. That covers every appointment with the default 24-hour reminder window; on Vercel Pro you can switch to hourly (`0 * * * *`) for shorter windows. Set `CRON_SECRET`; Vercel sends it as a Bearer token.
 4. Configure the Stripe webhook and Resend domain for the production URL.
 5. Use Cloudinary or S3 storage (local uploads don’t persist on Vercel).
 
