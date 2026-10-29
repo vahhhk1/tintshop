@@ -1,0 +1,35 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production
+/build
+
+# env files
+.env
+.env*.local
+!.env.example
+
+# prisma generated client
+/src/generated
+
+# local uploads (development storage driver)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.vercel
+
+# local embedded postgres data
+/.pgdata
+
+# raw source footage (re-encoded into public/video, see README "Homepage film")
+/1006 (2).mp4

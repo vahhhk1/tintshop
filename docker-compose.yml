@@ -1,0 +1,16 @@
+# Local PostgreSQL for development: `docker compose up -d`
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tint
+      POSTGRES_PASSWORD: tint
+      POSTGRES_DB: tint_shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - tint_pg:/var/lib/postgresql/data
+
+volumes:
+  tint_pg:

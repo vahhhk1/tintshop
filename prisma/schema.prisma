@@ -1,0 +1,921 @@
+// Prisma schema for the tint shop platform.
+// Money is stored as integer cents. Times of day ("09:00") are stored as
+// HH:mm strings interpreted in SiteSettings.timezone.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+/// Role-based access control. See src/lib/auth/permissions.ts.
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  DEPOSIT_PAID
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  WEBSITE
+  ADMIN
+  QUOTE
+}
+
+enum QuoteStatus {
+  NEW
+  CONTACTED
+  ESTIMATE_SENT
+  APPROVED
+  DECLINED
+  CONVERTED
+}
+
+enum LineItemKind {
+  SERVICE
+  ADDON
+  ADJUSTMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL
+  BALANCE
+}
+
+enum PaymentProvider {
+  STRIPE
+  DEMO
+  MANUAL
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+enum ServiceCategory {
+  WINDOW_TINT
+  PAINT_PROTECTION
+  COATING
+  LIGHTING
+}
+
+enum OptionKind {
+  COVERAGE
+  ADDON
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum GalleryCategory {
+  SEDAN
+  TRUCK
+  SUV
+  LUXURY
+  SPORTS
+  CERAMIC
+  WINDSHIELD
+  FULL_VEHICLE
+}
+
+enum NotificationAudience {
+  CUSTOMER
+  ADMIN
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_REMINDER
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_COMPLETED
+  PAYMENT_RECEIVED
+  QUOTE_RECEIVED
+  QUOTE_RESPONSE
+  NEW_BOOKING
+  NEW_QUOTE
+  NEW_CONTACT
+  NEW_PAYMENT
+  NEW_REVIEW
+}
+
+enum MessageChannel {
+  EMAIL
+  SMS
+}
+
+enum MessageStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// ─── Identity ────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  phone         String?
+  role          Role      @default(CUSTOMER)
+  isActive      Boolean   @default(true)
+  isDemo        Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts          Account[]
+  profile           CustomerProfile?
+  vehicles          Vehicle[]
+  appointments      Appointment[]
+  quotes            Quote[]
+  payments          Payment[]
+  reviews           Review[]
+  notifications     Notification[]
+  technician        Technician?
+  passwordResets    PasswordResetToken[]
+  couponRedemptions CouponRedemption[]
+
+  @@index([role])
+  @@index([createdAt])
+}
+
+/// OAuth account links (e.g. Google) for a user.
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CustomerProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  postalCode         String?
+  preferredContact   String?
+  emailNotifications Boolean  @default(true)
+  smsOptIn           Boolean  @default(false)
+  marketingOptIn     Boolean  @default(false)
+  adminNotes         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Vehicles ────────────────────────────────────────────────────────────────
+
+model VehicleType {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  sortOrder   Int     @default(0)
+  active      Boolean @default(true)
+
+  vehicles     Vehicle[]
+  pricingRules PricingRule[]
+  appointments Appointment[]
+  quotes       Quote[]
+}
+
+model VehicleSize {
+  id                    String  @id @default(cuid())
+  slug                  String  @unique
+  name                  String
+  description           String?
+  /// Applied to prices when a pricing rule does not target a specific size. -10 = 10% cheaper.
+  priceAdjustPercent    Int     @default(0)
+  durationAdjustPercent Int     @default(0)
+  sortOrder             Int     @default(0)
+  active                Boolean @default(true)
+
+  vehicles     Vehicle[]
+  pricingRules PricingRule[]
+  appointments Appointment[]
+  quotes       Quote[]
+}
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  userId        String
+  year          Int
+  make          String
+  model         String
+  color         String?
+  vin           String?
+  notes         String?
+  vehicleTypeId String?
+  vehicleSizeId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType  VehicleType?  @relation(fields: [vehicleTypeId], references: [id], onDelete: SetNull)
+  vehicleSize  VehicleSize?  @relation(fields: [vehicleSizeId], references: [id], onDelete: SetNull)
+  appointments Appointment[]
+
+  @@index([userId])
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+model FilmType {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  tagline        String?
+  description    String?
+  heatRejection  Int?
+  uvRejection    Int?
+  glareReduction Int?
+  warrantyYears  Int?
+  /// Available visible-light-transmission shades, e.g. [5, 15, 20, 35, 50, 70]
+  shades         Int[]
+  features       String[]
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  services     Service[]
+  pricingRules PricingRule[]
+  appointments Appointment[]
+  quotes       Quote[]
+  packages     Package[]
+}
+
+model Service {
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  name             String
+  category         ServiceCategory
+  tagline          String?
+  shortDescription String
+  description      String
+  benefits         String[]
+  features         String[]
+  imageUrl         String?
+  /// "Starting at" price shown in marketing (cents). Real prices come from PricingRule.
+  startingPrice    Int
+  durationMinutes  Int             @default(120)
+  durationLabel    String?
+  warranty         String?
+  usesFilm         Boolean         @default(false)
+  /// Locks the film for this service (e.g. "Ceramic Window Tint").
+  filmTypeId       String?
+  /// Share coverage options and pricing rules with another service.
+  parentId         String?
+  /// Fixed deposit override in cents. Falls back to SiteSettings deposit rules.
+  depositAmount    Int?
+  bookable         Boolean         @default(true)
+  featured         Boolean         @default(false)
+  active           Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  filmType      FilmType?      @relation(fields: [filmTypeId], references: [id], onDelete: SetNull)
+  parent        Service?       @relation("ServiceVariants", fields: [parentId], references: [id], onDelete: SetNull)
+  variants      Service[]      @relation("ServiceVariants")
+  options       ServiceOption[]
+  faqs          Faq[]
+  pricingRules  PricingRule[]
+  appointments  Appointment[]
+  quotes        Quote[]
+  technicians   Technician[]
+  coupons       Coupon[]
+  galleryImages GalleryImage[]
+  packages      Package[]
+
+  @@index([active, sortOrder])
+  @@index([category])
+}
+
+/// Coverage choices (Full Tint, Front Windows…) and add-ons for a service.
+model ServiceOption {
+  id              String     @id @default(cuid())
+  serviceId       String
+  name            String
+  description     String?
+  kind            OptionKind @default(COVERAGE)
+  windowCount     Int        @default(0)
+  /// Coverage: job duration. Add-on: extra minutes.
+  durationMinutes Int?
+  /// Fallback flat price in cents when no pricing rule matches (mostly add-ons).
+  price           Int?
+  active          Boolean    @default(true)
+  sortOrder       Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  service          Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  pricingRules     PricingRule[]
+  appointments     Appointment[]
+  quotes           Quote[]
+  appointmentItems AppointmentItem[]
+  quoteItems       QuoteItem[]
+  packages         Package[]
+
+  @@index([serviceId, kind])
+}
+
+/// A price for a combination of dimensions. Null dimensions are wildcards;
+/// the most specific matching rule wins (see src/lib/pricing/engine.ts).
+model PricingRule {
+  id              String   @id @default(cuid())
+  name            String?
+  serviceId       String?
+  serviceOptionId String?
+  filmTypeId      String?
+  vehicleTypeId   String?
+  vehicleSizeId   String?
+  price           Int
+  pricePerWindow  Int      @default(0)
+  durationMinutes Int?
+  priority        Int      @default(0)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  service       Service?       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id], onDelete: Cascade)
+  filmType      FilmType?      @relation(fields: [filmTypeId], references: [id], onDelete: Cascade)
+  vehicleType   VehicleType?   @relation(fields: [vehicleTypeId], references: [id], onDelete: Cascade)
+  vehicleSize   VehicleSize?   @relation(fields: [vehicleSizeId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, serviceOptionId])
+  @@index([active])
+}
+
+/// Marketing packages (Essential / Premium / Ceramic) shown on the homepage and pricing page.
+model Package {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  tagline         String?
+  description     String?
+  price           Int
+  priceSuffix     String?
+  features        String[]
+  recommendedFor  String[]
+  serviceId       String?
+  serviceOptionId String?
+  filmTypeId      String?
+  highlighted     Boolean  @default(false)
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  service       Service?       @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id], onDelete: SetNull)
+  filmType      FilmType?      @relation(fields: [filmTypeId], references: [id], onDelete: SetNull)
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  /// Null = general FAQ page entry.
+  serviceId String?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, sortOrder])
+}
+
+// ─── Scheduling ──────────────────────────────────────────────────────────────
+
+model Technician {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  name      String
+  title     String?
+  bio       String?
+  avatarUrl String?
+  color     String   @default("#3b82f6")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Services this technician performs. Empty = all services.
+  services     Service[]
+  schedules    TechnicianSchedule[]
+  timeOff      TechnicianTimeOff[]
+  appointments Appointment[]
+}
+
+/// Weekly working hours. A technician without entries follows business hours.
+model TechnicianSchedule {
+  id           String @id @default(cuid())
+  technicianId String
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, dayOfWeek])
+}
+
+model TechnicianTimeOff {
+  id           String   @id @default(cuid())
+  technicianId String
+  startsAt     DateTime
+  endsAt       DateTime
+  reason       String?
+
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId, startsAt])
+}
+
+model BusinessHours {
+  id        String  @id @default(cuid())
+  /// 0 = Sunday … 6 = Saturday
+  dayOfWeek Int     @unique
+  isOpen    Boolean @default(true)
+  openTime  String  @default("09:00")
+  closeTime String  @default("18:00")
+}
+
+model BreakPeriod {
+  id        String  @id @default(cuid())
+  /// Null = applies every open day.
+  dayOfWeek Int?
+  startTime String
+  endTime   String
+  label     String?
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  name      String
+  /// When false, openTime/closeTime define special hours for the day.
+  closed    Boolean  @default(true)
+  openTime  String?
+  closeTime String?
+}
+
+// ─── Bookings & quotes ───────────────────────────────────────────────────────
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  reference          String            @unique
+  /// Secret for guest self-service links (/manage/[token]).
+  manageToken        String            @unique
+  userId             String?
+  customerName       String
+  customerEmail      String
+  customerPhone      String
+  serviceId          String
+  serviceOptionId    String?
+  filmTypeId         String?
+  shade              Int?
+  vehicleTypeId      String?
+  vehicleSizeId      String?
+  vehicleId          String?
+  vehicleYear        Int?
+  vehicleMake        String?
+  vehicleModel       String?
+  vehicleColor       String?
+  technicianId       String?
+  startsAt           DateTime
+  endsAt             DateTime
+  status             AppointmentStatus @default(PENDING)
+  source             AppointmentSource @default(WEBSITE)
+  subtotal           Int
+  discount           Int               @default(0)
+  tax                Int               @default(0)
+  total              Int
+  depositAmount      Int               @default(0)
+  amountPaid         Int               @default(0)
+  couponId           String?
+  quoteId            String?           @unique
+  customerNotes      String?
+  internalNotes      String?
+  /// Unpaid online bookings hold the slot until this time.
+  holdExpiresAt      DateTime?
+  confirmedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  reminderSentAt     DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  service          Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceOption    ServiceOption?    @relation(fields: [serviceOptionId], references: [id], onDelete: SetNull)
+  filmType         FilmType?         @relation(fields: [filmTypeId], references: [id], onDelete: SetNull)
+  vehicleType      VehicleType?      @relation(fields: [vehicleTypeId], references: [id], onDelete: SetNull)
+  vehicleSize      VehicleSize?      @relation(fields: [vehicleSizeId], references: [id], onDelete: SetNull)
+  vehicle          Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  technician       Technician?       @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  coupon           Coupon?           @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  quote            Quote?            @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  items            AppointmentItem[]
+  payments         Payment[]
+  review           Review?
+  couponRedemption CouponRedemption?
+
+  @@index([startsAt])
+  @@index([status, startsAt])
+  @@index([technicianId, startsAt])
+  @@index([userId])
+  @@index([customerEmail])
+}
+
+model AppointmentItem {
+  id              String       @id @default(cuid())
+  appointmentId   String
+  kind            LineItemKind @default(SERVICE)
+  label           String
+  description     String?
+  serviceOptionId String?
+  quantity        Int          @default(1)
+  unitPrice       Int
+  total           Int
+
+  appointment   Appointment    @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
+}
+
+model Quote {
+  id              String      @id @default(cuid())
+  reference       String      @unique
+  userId          String?
+  name            String
+  email           String
+  phone           String
+  vehicleYear     Int?
+  vehicleMake     String?
+  vehicleModel    String?
+  vehicleTypeId   String?
+  vehicleSizeId   String?
+  serviceId       String?
+  serviceOptionId String?
+  filmTypeId      String?
+  shade           Int?
+  notes           String?
+  estimatedTotal  Int         @default(0)
+  status          QuoteStatus @default(NEW)
+  adminNotes      String?
+  responseMessage String?
+  quotedPrice     Int?
+  respondedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vehicleType   VehicleType?   @relation(fields: [vehicleTypeId], references: [id], onDelete: SetNull)
+  vehicleSize   VehicleSize?   @relation(fields: [vehicleSizeId], references: [id], onDelete: SetNull)
+  service       Service?       @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id], onDelete: SetNull)
+  filmType      FilmType?      @relation(fields: [filmTypeId], references: [id], onDelete: SetNull)
+  items         QuoteItem[]
+  appointment   Appointment?
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([userId])
+}
+
+model QuoteItem {
+  id              String       @id @default(cuid())
+  quoteId         String
+  kind            LineItemKind @default(SERVICE)
+  label           String
+  description     String?
+  serviceOptionId String?
+  quantity        Int          @default(1)
+  unitPrice       Int
+  total           Int
+
+  quote         Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  serviceOption ServiceOption? @relation(fields: [serviceOptionId], references: [id], onDelete: SetNull)
+
+  @@index([quoteId])
+}
+
+// ─── Payments & promotions ───────────────────────────────────────────────────
+
+model Payment {
+  id                      String          @id @default(cuid())
+  appointmentId           String
+  userId                  String?
+  amount                  Int
+  currency                String          @default("usd")
+  type                    PaymentType
+  status                  PaymentStatus   @default(PENDING)
+  provider                PaymentProvider
+  receiptNumber           String          @unique
+  stripeCheckoutSessionId String?         @unique
+  stripePaymentIntentId   String?         @unique
+  receiptUrl              String?
+  method                  String?
+  billingName             String?
+  billingEmail            String?
+  billingAddress          Json?
+  note                    String?
+  paidAt                  DateTime?
+  refundedAt              DateTime?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
+  @@index([status, paidAt])
+  @@index([userId])
+}
+
+/// Processed Stripe webhook event ids, for idempotency.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}
+
+model Coupon {
+  id               String       @id @default(cuid())
+  code             String       @unique
+  description      String?
+  type             DiscountType
+  /// Percent (e.g. 10) or fixed amount in cents.
+  value            Int
+  minPurchase      Int?
+  maxDiscount      Int?
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  usageLimit       Int?
+  perCustomerLimit Int?
+  usageCount       Int          @default(0)
+  active           Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  /// Restrict to these services. Empty = all services.
+  services     Service[]
+  appointments Appointment[]
+  redemptions  CouponRedemption[]
+}
+
+model CouponRedemption {
+  id            String   @id @default(cuid())
+  couponId      String
+  appointmentId String   @unique
+  userId        String?
+  email         String
+  amount        Int
+  createdAt     DateTime @default(now())
+
+  coupon      Coupon      @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([couponId, email])
+}
+
+// ─── Content ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id            String       @id @default(cuid())
+  userId        String?
+  appointmentId String?      @unique
+  name          String
+  email         String?
+  rating        Int
+  title         String?
+  body          String
+  vehicle       String?
+  status        ReviewStatus @default(PENDING)
+  featured      Boolean      @default(false)
+  adminReply    String?
+  publishedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model GalleryImage {
+  id             String            @id @default(cuid())
+  title          String
+  caption        String?
+  alt            String
+  imageUrl       String
+  /// Optional "before" photo; imageUrl is the "after".
+  beforeImageUrl String?
+  width          Int?
+  height         Int?
+  categories     GalleryCategory[]
+  vehicle        String?
+  serviceId      String?
+  featured       Boolean           @default(false)
+  published      Boolean           @default(true)
+  sortOrder      Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([published, sortOrder])
+}
+
+model ContactMessage {
+  id              String        @id @default(cuid())
+  name            String
+  email           String
+  phone           String?
+  vehicle         String?
+  serviceInterest String?
+  message         String
+  status          ContactStatus @default(NEW)
+  adminNotes      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model LegalPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String?
+  audience  NotificationAudience
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([audience, createdAt])
+}
+
+/// Delivery log for outbound email/SMS (useful when providers are not configured).
+model MessageLog {
+  id                String         @id @default(cuid())
+  channel           MessageChannel
+  to                String
+  subject           String?
+  template          String
+  status            MessageStatus
+  provider          String?
+  providerMessageId String?
+  error             String?
+  createdAt         DateTime       @default(now())
+
+  @@index([createdAt])
+}
+
+// ─── Settings & infrastructure ───────────────────────────────────────────────
+
+/// Singleton row (id = "default") holding business configuration.
+model SiteSettings {
+  id                      String   @id @default("default")
+  businessName            String
+  tagline                 String?
+  logoUrl                 String?
+  phone                   String
+  email                   String
+  addressLine1            String
+  addressLine2            String?
+  city                    String
+  state                   String
+  postalCode              String
+  country                 String   @default("US")
+  latitude                Float?
+  longitude               Float?
+  googleMapsUrl           String?
+  googleMapsEmbedUrl      String?
+  instagramUrl            String?
+  facebookUrl             String?
+  tiktokUrl               String?
+  youtubeUrl              String?
+  googleReviewsUrl        String?
+  timezone                String   @default("America/Los_Angeles")
+  currency                String   @default("usd")
+  /// Basis points: 825 = 8.25%
+  taxRateBps              Int      @default(0)
+  depositPercent          Int      @default(25)
+  depositMinimum          Int      @default(5000)
+  requireDeposit          Boolean  @default(false)
+  allowPayInFull          Boolean  @default(true)
+  slotIntervalMinutes     Int      @default(30)
+  bufferMinutes           Int      @default(15)
+  minNoticeHours          Int      @default(12)
+  maxAdvanceDays          Int      @default(60)
+  holdMinutes             Int      @default(30)
+  reminderHoursBefore     Int      @default(24)
+  cancellationWindowHours Int      @default(24)
+  /// Parallel bays used when no technicians are configured.
+  shopCapacity            Int      @default(2)
+  cancellationPolicy      String
+  warrantyInfo            String
+  yearsInBusiness         Int?
+  vehiclesCompleted       Int?
+  heroHeadline            String?
+  heroSubheadline         String?
+  updatedAt               DateTime @updatedAt
+}
+
+/// Fixed-window rate limiting shared across serverless instances.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}
