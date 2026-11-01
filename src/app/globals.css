@@ -121,8 +121,15 @@
   }
   h1, h2, h3, h4 {
     @apply font-display tracking-tight;
-    font-stretch: 110%;
     text-wrap: balance;
+  }
+  /*
+   * The serif runs small for its size (low x-height); this keeps headings as present as the
+   * old wide sans did. Lining figures so prices and stats sit on the line.
+   */
+  h1, h2, h3, h4, .font-display {
+    font-size-adjust: 0.47;
+    font-feature-settings: "lnum";
   }
   p {
     text-wrap: pretty;
@@ -172,12 +179,12 @@
 }
 
 @utility eyebrow {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   line-height: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
+  font-weight: 500;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: rgb(255 255 255 / 0.62);
 }
 
 @utility skeleton {

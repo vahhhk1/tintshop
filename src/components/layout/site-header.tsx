@@ -191,8 +191,8 @@ export function FloatingCallButton({ phone }: { phone: string }) {
         barVisible ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]" : "bottom-[max(1.25rem,env(safe-area-inset-bottom))]",
       )}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/60 animate-call-pulse" aria-hidden />
-      <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-call-pulse [animation-delay:0.35s]" aria-hidden />
+      <span className="pointer-events-none absolute inset-0 rounded-full bg-white/25 animate-call-pulse" aria-hidden />
+      <span className="pointer-events-none absolute inset-0 rounded-full bg-white/15 animate-call-pulse [animation-delay:0.35s]" aria-hidden />
       <Phone className="relative size-6 animate-phone-ring group-hover:animate-none" strokeWidth={2.25} aria-hidden />
     </a>
   );

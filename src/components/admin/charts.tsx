@@ -4,10 +4,10 @@ import * as React from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 /*
- * Chart palette validated for the dark surface (#121214) with the dataviz
- * validator: lightness band, chroma, CVD and contrast all pass.
+ * Black-and-white brand: the two series are greys told apart by lightness alone (light vs.
+ * mid grey on the #121214 surface), which also holds for every kind of colour blindness.
  */
-const SERIES = { primary: "#c4841a", secondary: "#3a7bd5" };
+const SERIES = { primary: "#e4e4e7", secondary: "#71717a" };
 const GRID = "rgb(255 255 255 / 0.06)";
 const AXIS = { fill: "#a1a1aa", fontSize: 12 };
 const SURFACE = "#121214";

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@/components/analytics/analytics";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
@@ -8,7 +8,8 @@ import { absoluteUrl } from "@/lib/utils";
 import "./globals.css";
 
 const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
-const display = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display-face", display: "swap" });
+// Headings: a classic high-contrast serif that matches the engraved capitals of the logo.
+const display = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-display-face", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
