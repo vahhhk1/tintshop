@@ -82,7 +82,7 @@ export function PackagesSection({ packages, heading = true }: { packages: Packag
                 className={cn(
                   "relative flex h-full flex-col rounded-3xl border p-7 sm:p-8",
                   p.highlighted
-                    ? "border-primary/50 bg-gradient-to-b from-primary/[0.12] via-card to-card shadow-[0_40px_80px_-40px_rgb(245_181_68/0.35)]"
+                    ? "border-primary/50 bg-gradient-to-b from-primary/[0.12] via-card to-card shadow-[0_40px_80px_-40px_rgb(255_255_255/0.18)]"
                     : "border-white/[0.08] bg-card",
                 )}
               >

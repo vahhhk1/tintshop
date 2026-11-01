@@ -35,7 +35,8 @@ interface LayoutInput {
   outro?: string;
 }
 
-const ACCENT = "#1f6bff";
+const ACCENT = "#f5f6f7";
+const ACCENT_TEXT = "#0a0a0b";
 
 function layout({ brand, preheader, heading, intro, rows, totals, cta, outro }: LayoutInput) {
   const rowHtml = (list: Row[], strongLast = false) =>
@@ -63,7 +64,7 @@ function layout({ brand, preheader, heading, intro, rows, totals, cta, outro }: 
   <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#c4c8cd">${intro}</p>
   ${rows?.length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:8px 0 16px">${rowHtml(rows)}</table>` : ""}
   ${totals?.length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 16px">${rowHtml(totals, true)}</table>` : ""}
-  ${cta ? `<p style="margin:28px 0 8px"><a href="${escapeHtml(cta.href)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 24px;border-radius:999px">${escapeHtml(cta.label)}</a></p>` : ""}
+  ${cta ? `<p style="margin:28px 0 8px"><a href="${escapeHtml(cta.href)}" style="display:inline-block;background:${ACCENT};color:${ACCENT_TEXT};text-decoration:none;font-weight:600;font-size:15px;padding:14px 24px;border-radius:999px">${escapeHtml(cta.label)}</a></p>` : ""}
   ${outro ? `<p style="margin:20px 0 0;font-size:14px;line-height:1.6;color:#9aa0a6">${outro}</p>` : ""}
 </td></tr>
 <tr><td style="padding:20px 32px;border-top:1px solid #1f2227;font-size:12px;line-height:1.6;color:#6b7078">

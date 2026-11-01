@@ -4,8 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Brand tokens. The site is intentionally dark-only: charcoal surfaces,
- * white type and a single amber accent.
+ * Brand tokens. The site is intentionally dark-only and black and white:
+ * charcoal surfaces, white type, and white as the only accent. Only status
+ * colours (success, warning, error, info) keep a hue.
  */
 :root {
   --radius: 0.875rem;
@@ -15,8 +16,8 @@
   --card-foreground: #f5f5f4;
   --popover: #141416;
   --popover-foreground: #f5f5f4;
-  --primary: #f5b544;
-  --primary-foreground: #1a1206;
+  --primary: #fafafa;
+  --primary-foreground: #0a0a0b;
   --secondary: #1d1d20;
   --secondary-foreground: #f5f5f4;
   --muted: #18181b;
@@ -30,12 +31,12 @@
   --info: #60a5fa;
   --border: rgb(255 255 255 / 0.08);
   --input: rgb(255 255 255 / 0.12);
-  --ring: #f5b544;
-  --chart-1: #f5b544;
-  --chart-2: #60a5fa;
-  --chart-3: #34d399;
-  --chart-4: #c084fc;
-  --chart-5: #f87171;
+  --ring: #fafafa;
+  --chart-1: #fafafa;
+  --chart-2: #a1a1aa;
+  --chart-3: #d4d4d8;
+  --chart-4: #71717a;
+  --chart-5: #52525b;
 }
 
 @theme inline {

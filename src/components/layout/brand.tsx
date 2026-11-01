@@ -2,36 +2,63 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+/**
+ * Brand artwork in public/brand, cut from the original logo: the full stacked logo, its
+ * lettering and the round emblem. White versions for the dark site (black ones are there
+ * for light backgrounds). Small, exact-size PNGs, so they skip image optimisation.
+ */
+const BRAND = {
+  logo: { src: "/brand/logo-white.png", width: 600, height: 314 },
+  wordmark: { src: "/brand/wordmark-white.png", width: 594, height: 41 },
+  emblem: { src: "/brand/emblem-white.png", width: 174, height: 174 },
+};
+
 export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden className={cn("size-8", className)}>
-      <defs>
-        <linearGradient id="lm-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f8cf7a" />
-          <stop offset="1" stopColor="#c98a1c" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="#141416" />
-      <path d="M7 21.5 12.5 9h13L20 21.5H7Z" fill="url(#lm-g)" />
-      <path d="M9.6 21.5 14.2 11h3.2l-4.6 10.5H9.6Z" fill="#141416" opacity=".55" />
-      <rect x="7" y="23.5" width="18.5" height="1.6" rx=".8" fill="#fff" opacity=".18" />
-    </svg>
-  );
+  return <Image {...BRAND.emblem} alt="" aria-hidden unoptimized className={cn("size-8", className)} />;
 }
 
-export function Logo({ name, logoUrl, className, href = "/", compact }: { name: string; logoUrl?: string | null; className?: string; href?: string; compact?: boolean }) {
-  const [first, ...rest] = name.split(" ");
+/**
+ * The logo. In bars (header, dashboards) the emblem sits beside the lettering, which stays
+ * legible at that height; `stacked` shows the full logo (footer, sign-in pages). A logo
+ * uploaded in Admin → Settings replaces the artwork, next to the business name.
+ */
+export function Logo({
+  name,
+  logoUrl,
+  className,
+  href = "/",
+  compact,
+  stacked,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  className?: string;
+  href?: string;
+  compact?: boolean;
+  stacked?: boolean;
+}) {
+  if (logoUrl) {
+    const [first, ...rest] = name.split(" ");
+    return (
+      <Link href={href} className={cn("group inline-flex items-center gap-2.5 rounded-lg", className)} aria-label={`${name} — home`}>
+        <Image src={logoUrl} alt="" width={32} height={32} className="size-8 rounded-lg object-contain" />
+        <span className={cn("font-display leading-none font-semibold whitespace-nowrap uppercase", compact ? "text-[12.5px] tracking-[0.1em]" : "text-[15px] tracking-[0.14em]")} style={{ fontStretch: "120%" }}>
+          {first}
+          {rest.length > 0 && <span className="ml-1.5 font-normal text-muted-foreground">{rest.join(" ")}</span>}
+        </span>
+      </Link>
+    );
+  }
   return (
     <Link href={href} className={cn("group inline-flex items-center gap-2.5 rounded-lg", className)} aria-label={`${name} — home`}>
-      {logoUrl ? (
-        <Image src={logoUrl} alt="" width={32} height={32} className="size-8 rounded-lg object-contain" />
+      {stacked ? (
+        <Image {...BRAND.logo} alt="" unoptimized className="h-auto w-56" />
       ) : (
-        <LogoMark className="transition-transform duration-300 group-hover:-rotate-3" />
+        <>
+          <LogoMark className={cn("transition-transform duration-300 group-hover:-rotate-6", compact ? "size-8" : "size-10")} />
+          <Image {...BRAND.wordmark} alt="" unoptimized className={cn("w-auto", compact ? "h-[11px]" : "h-[13px] sm:h-[15px]")} />
+        </>
       )}
-      <span className={cn("font-display leading-none font-semibold whitespace-nowrap uppercase", compact ? "text-[12.5px] tracking-[0.1em]" : "text-[15px] tracking-[0.14em]")} style={{ fontStretch: "120%" }}>
-        {first}
-        {rest.length > 0 && <span className="ml-1.5 font-normal text-muted-foreground">{rest.join(" ")}</span>}
-      </span>
     </Link>
   );
 }

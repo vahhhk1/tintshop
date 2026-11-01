@@ -30,7 +30,7 @@ export function PageHero({
           <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/80 to-background" aria-hidden />
         </>
       ) : (
-        <div className="absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(60%_80%_at_20%_0%,rgb(245_181_68/0.10),transparent_70%)]" aria-hidden />
+        <div className="absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(60%_80%_at_20%_0%,rgb(255_255_255/0.07),transparent_70%)]" aria-hidden />
       )}
       <div className="container-page">
         {trail && (

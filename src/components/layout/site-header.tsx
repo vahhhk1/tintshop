@@ -187,7 +187,7 @@ export function FloatingCallButton({ phone }: { phone: string }) {
       aria-label={`Call us at ${phone}`}
       title={`Call ${phone}`}
       className={cn(
-        "group fixed right-4 z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_12px_40px_-8px_rgb(245_181_68/0.65)] transition-transform duration-200 animate-in fade-in zoom-in-75 hover:scale-110 active:scale-95 sm:right-6 sm:bottom-6",
+        "group fixed right-4 z-40 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_12px_40px_-8px_rgb(255_255_255/0.3)] transition-transform duration-200 animate-in fade-in zoom-in-75 hover:scale-110 active:scale-95 sm:right-6 sm:bottom-6",
         barVisible ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]" : "bottom-[max(1.25rem,env(safe-area-inset-bottom))]",
       )}
     >

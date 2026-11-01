@@ -14,7 +14,7 @@ export function SiteFooter({ settings, hours, services }: { settings: Settings; 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" aria-hidden />
       <div className="container-page grid gap-12 py-16 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <Logo name={settings.businessName} logoUrl={settings.logoUrl} />
+          <Logo name={settings.businessName} logoUrl={settings.logoUrl} stacked />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
             {settings.tagline ?? "Premium automotive window tint"} — precision-cut films, dust-free installation and a written warranty on every job.
           </p>
